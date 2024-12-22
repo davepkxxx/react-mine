@@ -1,4 +1,4 @@
-import { MineMap } from './Mine'
+import { MineMap } from './components/Mine'
 import './App.css'
 
 function App() {
