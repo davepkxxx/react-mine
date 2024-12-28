@@ -1,16 +1,9 @@
-import { atom } from 'jotai'
-
-export enum MineFieldState {
-  Explored,
-  Unexplored,
-  Flagged,
-}
-
 export interface MineCell {
   row: number
   col: number
   mined: boolean
-  state: MineFieldState
+  revealed: boolean
+  flagged: boolean
   adjacentMines: number
 }
 
@@ -24,7 +17,8 @@ export function createMineGrid(rows: number, cols: number, mines: number) {
         row,
         col,
         mined: false,
-        state: MineFieldState.Unexplored,
+        revealed: false,
+        flagged: false,
         adjacentMines: 0,
       }
     }
@@ -54,8 +48,6 @@ function addAdjacentMines(grid: MineCell[][], row: number, col: number) {
   }
 }
 
-export const mineGridAtom = atom(createMineGrid(10, 10, 10))
-
 export function setMineCell(grid: MineCell[][], newCell: MineCell) {
   const { row, col } = newCell
   const newRow = [...grid[row]]
@@ -64,7 +56,3 @@ export function setMineCell(grid: MineCell[][], newCell: MineCell) {
   newGrid.splice(row, 1, newRow)
   return newGrid
 }
-
-export const setMineCellAtom = atom(null, (get, set, cell: MineCell) =>
-  set(mineGridAtom, setMineCell(get(mineGridAtom), cell))
-)

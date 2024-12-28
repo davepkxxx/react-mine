@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import {
-  createMineGrid,
-  MineFieldState,
-  setMineCell,
-} from '../../src/store/mine'
+import { createMineGrid, setMineCell } from '../../src/models/mine'
 
 describe('mine.ts', () => {
   test('createMineGrid()', () => {
@@ -22,7 +18,8 @@ describe('mine.ts', () => {
         const cell = row[j]
         expect(cell.row).toBe(i)
         expect(cell.col).toBe(j)
-        expect(cell.state).toBe(MineFieldState.Unexplored)
+        expect(cell.revealed).toBe(false)
+        expect(cell.flagged).toBe(false)
 
         let adjacentMines = 0
         for (let k = i - 1; k <= i + 1; k++) {
@@ -46,7 +43,7 @@ describe('mine.ts', () => {
 
     const row = Math.floor(Math.random() * rows)
     const col = Math.floor(Math.random() * cols)
-    const cell = { ...grid[row][col], state: MineFieldState.Explored }
+    const cell = { ...grid[row][col], isRevealed: true, isFlagged: true }
 
     const newGrid = setMineCell(grid, cell)
     expect(newGrid).not.toBe(grid)

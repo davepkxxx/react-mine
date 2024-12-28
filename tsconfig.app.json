@@ -25,7 +25,8 @@
     /* support importMeta */
     "types": [
       "@vitest/browser/providers/playwright",
-      "vitest/importMeta"
+      "vitest/importMeta",
+      "./src/vite-env.d.ts"
     ]
   },
   "include": ["src/**/*", "tests/**/*"]

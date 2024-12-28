@@ -1,50 +1,96 @@
 import classNames from 'classnames'
-import { useAtomValue, useSetAtom } from 'jotai'
-import {
-  MineCell,
-  MineFieldState,
-  mineGridAtom,
-  setMineCellAtom,
-} from '../store/mine'
 import './Mine.css'
+import { MineCell, setMineCell } from '../models/mine'
 
-export type MineFieldProps = MineCell
+export type MineFieldProps = {
+  value: MineCell
+  onChange: (value: MineCell) => void
+}
 
 export function MineField(props: MineFieldProps) {
-  const setMineCell = useSetAtom(setMineCellAtom)
-  const { mined, state, adjacentMines } = props
+  const { value, onChange } = props
+  const { row, col, mined, revealed, flagged, adjacentMines } = value
+
+  const reveal = () => {
+    const { revealed, flagged } = value
+    if (!revealed && !flagged) onChange({ ...value, revealed: true })
+  }
+
+  const toggleFlag = () => {
+    const { revealed, flagged } = value
+    if (!revealed) onChange({ ...value, flagged: !flagged })
+  }
 
   return (
     <td
       role="gridcell"
+      {...(import.meta.env.DEV
+        ? { 'data-testid': `mine-cell-${row}-${col}` }
+        : {})}
       className={classNames('mine-cell', {
-        'mine-cell-explored': state === MineFieldState.Explored,
-        'mine-cell-empty':
-          state === MineFieldState.Explored && !mined && adjacentMines === 0,
+        'mine-cell-revealed': revealed,
       })}
-      onClick={() => setMineCell({ ...props, state: MineFieldState.Explored })}
+      onClick={reveal}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        toggleFlag()
+      }}
     >
-      {state === MineFieldState.Explored
+      {revealed
         ? mined
           ? '*'
           : adjacentMines > 0
             ? adjacentMines
             : ''
-        : ''}
+        : flagged
+          ? 'P'
+          : ''}
     </td>
   )
 }
 
-export function MineMap() {
-  const grid = useAtomValue(mineGridAtom)
+export interface MineMapProps {
+  value: MineCell[][]
+  onChange: (value: MineCell[][]) => void
+}
+
+export function MineMap(props: MineMapProps) {
+  const { value, onChange } = props
+
+  const revealAdjacent = (cell: MineCell, grid: MineCell[][]) => {
+    for (let i = cell.row - 1; i <= cell.row + 1; i++) {
+      for (let j = cell.col - 1; j <= cell.col + 1; j++) {
+        if (value[i]?.[j]) reveal(value[i][j], grid)
+      }
+    }
+  }
+
+  const reveal = (cell: MineCell, grid: MineCell[][]) => {
+    const { revealed, flagged, adjacentMines } = cell
+    if (!revealed && !flagged) {
+      cell.revealed = true
+      if (adjacentMines === 0) revealAdjacent(cell, grid)
+    }
+  }
+
+  const handleCellChange = (cell: MineCell) => {
+    const { revealed, adjacentMines } = cell
+    const newValue = setMineCell(value, cell)
+    if (revealed && adjacentMines === 0) revealAdjacent(cell, newValue)
+    onChange(newValue)
+  }
 
   return (
     <table role="grid" className="mine-grid">
       <tbody>
-        {grid.map((row, i) => (
-          <tr role="row" key={`row-${i}`}>
+        {value.map((row, i) => (
+          <tr key={`row-${i}`}>
             {row.map((cell, j) => (
-              <MineField key={`cell-${i}-${j}`} {...cell} />
+              <MineField
+                key={`cell-${i}-${j}`}
+                value={cell}
+                onChange={(newCell) => handleCellChange(newCell)}
+              />
             ))}
           </tr>
         ))}
