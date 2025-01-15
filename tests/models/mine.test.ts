@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { createMineGrid, setMineCell } from '../../src/models/mine'
+import { cloneMineGrid, createMineGrid } from '../../src/models/mine'
 
 describe('mine.ts', () => {
   test('createMineGrid()', () => {
@@ -35,7 +35,7 @@ describe('mine.ts', () => {
     expect(mineCount).toBe(mines)
   })
 
-  test('setMineCell()', () => {
+  test('cloneMineCell()', () => {
     const rows = 10
     const cols = 10
     const mines = 10
@@ -43,25 +43,16 @@ describe('mine.ts', () => {
 
     const row = Math.floor(Math.random() * rows)
     const col = Math.floor(Math.random() * cols)
-    const cell = { ...grid[row][col], isRevealed: true, isFlagged: true }
 
-    const newGrid = setMineCell(grid, cell)
+    const newGrid = cloneMineGrid(grid)
+    expect(newGrid).toEqual(grid)
     expect(newGrid).not.toBe(grid)
 
     for (let i = 0; i < rows; i++) {
-      if (i === row) {
-        expect(newGrid[row]).not.toBe(grid[row])
-      } else {
-        expect(newGrid[i]).toBe(grid[i])
-      }
+      expect(newGrid[row]).not.toBe(grid[row])
 
       for (let j = 0; j < cols; j++) {
-        if (i === row && j === col) {
-          expect(newGrid[row][col]).not.toBe(cell)
-          expect(newGrid[row][col]).toEqual(cell)
-        } else {
-          expect(newGrid[i][j]).toBe(grid[i][j])
-        }
+        expect(newGrid[row][col]).not.toBe(grid[row][cols])
       }
     }
   })

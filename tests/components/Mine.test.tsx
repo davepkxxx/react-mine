@@ -1,3 +1,4 @@
+import { fireEvent } from '@testing-library/react'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { MineField, MineMap } from '../../src/components/Mine'
@@ -21,7 +22,7 @@ describe('Mine.tsx', () => {
     test('unrevealed', async () => {
       const onChange = vi.fn()
       const { getByRole } = render(
-        <MineField value={value} onChange={onChange} />
+        <MineField value={value} onChange={onChange} onChord={() => {}} />
       )
 
       const loc = getByRole('gridcell')
@@ -41,7 +42,7 @@ describe('Mine.tsx', () => {
       value.revealed = true
       const onChange = vi.fn()
       const { getByRole } = render(
-        <MineField value={value} onChange={onChange} />
+        <MineField value={value} onChange={onChange} onChord={() => {}} />
       )
 
       const loc = getByRole('gridcell')
@@ -63,7 +64,7 @@ describe('Mine.tsx', () => {
       value.adjacentMines = 1
       const onChange = vi.fn()
       const { getByRole } = render(
-        <MineField value={value} onChange={onChange} />
+        <MineField value={value} onChange={onChange} onChord={() => {}} />
       )
 
       const loc = getByRole('gridcell')
@@ -85,7 +86,7 @@ describe('Mine.tsx', () => {
       value.adjacentMines = Math.floor(Math.random() * 8)
       const onChange = vi.fn()
       const { getByRole } = render(
-        <MineField value={value} onChange={onChange} />
+        <MineField value={value} onChange={onChange} onChord={() => {}} />
       )
 
       const loc = getByRole('gridcell')
@@ -105,7 +106,7 @@ describe('Mine.tsx', () => {
       value.flagged = true
       const onChange = vi.fn()
       const { getByRole } = render(
-        <MineField value={value} onChange={onChange} />
+        <MineField value={value} onChange={onChange} onChord={() => {}} />
       )
 
       const loc = getByRole('gridcell')
@@ -155,11 +156,11 @@ describe('Mine.tsx', () => {
       value[1][1].adjacentMines = 1
 
       const onChange = vi.fn()
-      const { getByTestId } = render(
+      const { getByRole } = render(
         <MineMap value={value} onChange={onChange} />
       )
 
-      await getByTestId('mine-cell-0-0').click()
+      await getByRole('gridcell').all()[0]?.click()
       expect(onChange).toHaveBeenCalledWith([
         [
           {
@@ -183,11 +184,11 @@ describe('Mine.tsx', () => {
       value[1][1].adjacentMines = 1
 
       const onChange = vi.fn()
-      const { getByTestId } = render(
+      const { getByRole } = render(
         <MineMap value={value} onChange={onChange} />
       )
 
-      await getByTestId('mine-cell-0-0').click()
+      await getByRole('gridcell').all()[0]?.click()
       expect(onChange).toHaveBeenCalledWith([
         [
           {
@@ -212,11 +213,11 @@ describe('Mine.tsx', () => {
       value[2][2].adjacentMines = 1
 
       const onChange = vi.fn()
-      const { getByTestId } = render(
+      const { getByRole } = render(
         <MineMap value={value} onChange={onChange} />
       )
 
-      await getByTestId('mine-cell-0-0').click()
+      await getByRole('gridcell').all()[0]?.click()
       expect(onChange).toHaveBeenCalledWith([
         [
           {
@@ -267,11 +268,11 @@ describe('Mine.tsx', () => {
       value[1][1].flagged = true
 
       const onChange = vi.fn()
-      const { getByTestId } = render(
+      const { getByRole } = render(
         <MineMap value={value} onChange={onChange} />
       )
 
-      await getByTestId('mine-cell-0-0').click({ button: 'right' })
+      await getByRole('gridcell').all()[0]?.click({ button: 'right' })
       expect(onChange).toHaveBeenCalledWith([
         [
           {
@@ -290,11 +291,11 @@ describe('Mine.tsx', () => {
       const value = createMineGrid(rows, cols, 0)
 
       const onChange = vi.fn()
-      const { getByTestId } = render(
+      const { getByRole } = render(
         <MineMap value={value} onChange={onChange} />
       )
 
-      await getByTestId('mine-cell-0-0').click({ button: 'right' })
+      await getByRole('gridcell').all()[0]?.click({ button: 'right' })
       expect(onChange).toHaveBeenCalledWith([
         [
           {
@@ -304,6 +305,123 @@ describe('Mine.tsx', () => {
           value[0][1],
         ],
         value[1],
+      ])
+    })
+
+    test('chord if no flags', async () => {
+      const rows = 2
+      const cols = 2
+      const value = createMineGrid(rows, cols, 0)
+      value[0][0].revealed = true
+      value[0][0].adjacentMines = 1
+      value[0][1].adjacentMines = 1
+      value[1][0].adjacentMines = 1
+      value[1][1].mined = true
+      value[1][1].adjacentMines = 1
+
+      const onChange = vi.fn()
+      const { getByRole } = render(
+        <MineMap value={value} onChange={onChange} />
+      )
+
+      const el = getByRole('gridcell').all()[0].element()
+      fireEvent.mouseDown(el, { button: 0 })
+      fireEvent.mouseDown(el, { button: 2 })
+      fireEvent.mouseUp(el, { button: 0 })
+      fireEvent.mouseUp(el, { button: 2 })
+
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    test('chord if flags exceeds', async () => {
+      const rows = 2
+      const cols = 2
+      const value = createMineGrid(rows, cols, 0)
+      value[0][0].revealed = true
+      value[0][0].adjacentMines = 1
+      value[0][1].flagged = true
+      value[0][1].adjacentMines = 1
+      value[1][0].flagged = true
+      value[1][0].adjacentMines = 1
+      value[1][1].mined = true
+      value[1][1].adjacentMines = 1
+
+      const onChange = vi.fn()
+      const { getByRole } = render(
+        <MineMap value={value} onChange={onChange} />
+      )
+
+      const el = getByRole('gridcell').all()[0].element()
+      fireEvent.mouseDown(el, { button: 0 })
+      fireEvent.mouseDown(el, { button: 2 })
+      fireEvent.mouseUp(el, { button: 0 })
+      fireEvent.mouseUp(el, { button: 2 })
+
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    test('chord if insufficient flags', async () => {
+      const rows = 2
+      const cols = 2
+      const value = createMineGrid(rows, cols, 0)
+      value[0][0].revealed = true
+      value[0][0].adjacentMines = 2
+      value[0][1].flagged = true
+      value[0][1].adjacentMines = 2
+      value[1][0].mined = true
+      value[1][0].adjacentMines = 2
+      value[1][1].mined = true
+      value[1][1].adjacentMines = 2
+
+      const onChange = vi.fn()
+      const { getByRole } = render(
+        <MineMap value={value} onChange={onChange} />
+      )
+
+      const el = getByRole('gridcell').all()[0].element()
+      fireEvent.mouseDown(el, { button: 0 })
+      fireEvent.mouseDown(el, { button: 2 })
+      fireEvent.mouseUp(el, { button: 0 })
+      fireEvent.mouseUp(el, { button: 2 })
+
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    test('chord mines', async () => {
+      const rows = 2
+      const cols = 2
+      const value = createMineGrid(rows, cols, 0)
+      value[0][0].revealed = true
+      value[0][0].adjacentMines = 1
+      value[0][1].flagged = true
+      value[0][1].adjacentMines = 1
+      value[1][0].adjacentMines = 1
+      value[1][1].mined = true
+      value[1][1].adjacentMines = 1
+
+      const onChange = vi.fn()
+      const { getByRole } = render(
+        <MineMap value={value} onChange={onChange} />
+      )
+
+      const el = getByRole('gridcell').all()[0].element()
+      fireEvent.mouseDown(el, { button: 0 })
+      fireEvent.mouseDown(el, { button: 2 })
+      fireEvent.mouseUp(el, { button: 0 })
+      fireEvent.mouseUp(el, { button: 2 })
+
+      expect(onChange).toHaveBeenCalledWith([
+        value[0],
+        [
+          {
+            ...value[1][0],
+            revealed: true,
+          },
+          {
+            ...value[1][1],
+            revealed: true,
+          },
+        ],
       ])
     })
   })

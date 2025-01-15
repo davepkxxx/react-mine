@@ -48,11 +48,35 @@ function addAdjacentMines(grid: MineCell[][], row: number, col: number) {
   }
 }
 
-export function setMineCell(grid: MineCell[][], newCell: MineCell) {
-  const { row, col } = newCell
-  const newRow = [...grid[row]]
-  newRow.splice(col, 1, { ...newCell })
-  const newGrid = [...grid]
-  newGrid.splice(row, 1, newRow)
-  return newGrid
+export function cloneMineGrid(grid: MineCell[][]) {
+  return grid.map((row) =>
+    row.map((cell) => ({
+      ...cell,
+    }))
+  )
+}
+
+export function eachMineAdjacent(
+  grid: MineCell[][],
+  cell: MineCell,
+  callback: (adjacent: MineCell | undefined) => void
+) {
+  const { row, col } = cell
+  for (let i = row - 1; i <= row + 1; i++) {
+    for (let j = col - 1; j <= col + 1; j++) {
+      callback(grid[i]?.[j])
+    }
+  }
+}
+
+export function reduceMineAdjacent<U>(
+  grid: MineCell[][],
+  cell: MineCell,
+  callback: (prev: U, curr: MineCell | undefined) => U,
+  init: U
+) {
+  eachMineAdjacent(grid, cell, (adjacent) => {
+    init = callback(init, adjacent)
+  })
+  return init
 }

@@ -1,40 +1,82 @@
 import classNames from 'classnames'
+import { MouseEvent, useCallback, useState } from 'react'
 import './Mine.css'
-import { MineCell, setMineCell } from '../models/mine'
+import {
+  cloneMineGrid,
+  eachMineAdjacent,
+  MineCell,
+  reduceMineAdjacent,
+} from '../models/mine'
 
 export type MineFieldProps = {
   value: MineCell
   onChange: (value: MineCell) => void
+  onChord: () => void
 }
 
 export function MineField(props: MineFieldProps) {
-  const { value, onChange } = props
-  const { row, col, mined, revealed, flagged, adjacentMines } = value
+  const { value, onChange, onChord } = props
+  const { mined, revealed, flagged, adjacentMines } = value
+  const [leftPassed, setLeftPassed] = useState(false)
+  const [rightPassed, setRightPassed] = useState(false)
 
-  const reveal = () => {
-    const { revealed, flagged } = value
-    if (!revealed && !flagged) onChange({ ...value, revealed: true })
-  }
+  const handleMouseDown = useCallback((e: MouseEvent) => {
+    switch (e.button) {
+      case 0:
+        setLeftPassed(true)
+        break
+      case 2:
+        setRightPassed(true)
+        break
+    }
+  }, [])
 
-  const toggleFlag = () => {
-    const { revealed, flagged } = value
-    if (!revealed) onChange({ ...value, flagged: !flagged })
-  }
+  const handleMouseUp = useCallback(
+    (e: MouseEvent) => {
+      const { revealed, flagged, adjacentMines } = value
+
+      const reveal = () => {
+        if (!revealed && !flagged) onChange({ ...value, revealed: true })
+      }
+
+      const toggleFlag = () => {
+        if (!revealed) onChange({ ...value, flagged: !flagged })
+      }
+      const chord = () => {
+        if (revealed && adjacentMines > 0) onChord()
+      }
+
+      switch (e.button) {
+        case 0:
+          setLeftPassed(false)
+          if (rightPassed) {
+            setRightPassed(false)
+            chord()
+          } else {
+            reveal()
+          }
+          break
+        case 2:
+          setRightPassed(false)
+          if (leftPassed) {
+            setLeftPassed(false)
+            chord()
+          } else {
+            toggleFlag()
+          }
+          break
+      }
+    },
+    [leftPassed, rightPassed, value, onChange, onChord]
+  )
 
   return (
     <td
       role="gridcell"
-      {...(import.meta.env.DEV
-        ? { 'data-testid': `mine-cell-${row}-${col}` }
-        : {})}
-      className={classNames('mine-cell', {
-        'mine-cell-revealed': revealed,
-      })}
-      onClick={reveal}
-      onContextMenu={(e) => {
-        e.preventDefault()
-        toggleFlag()
-      }}
+      className={classNames('mine-cell', { 'mine-cell-revealed': revealed })}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onContextMenu={(e) => e.preventDefault()}
     >
       {revealed
         ? mined
@@ -54,31 +96,53 @@ export interface MineMapProps {
   onChange: (value: MineCell[][]) => void
 }
 
+const reveal = (newCell: MineCell, newGrid: MineCell[][]) => {
+  const { revealed, flagged, adjacentMines } = newCell
+  if (!revealed && !flagged) {
+    newCell.revealed = true
+    if (adjacentMines === 0) revealAdjacent({ ...newCell }, newGrid)
+  }
+}
+
+function revealAdjacent(newCell: MineCell, newGrid: MineCell[][]) {
+  eachMineAdjacent(newGrid, newCell, (adjacent) => {
+    if (adjacent) reveal(adjacent, newGrid)
+  })
+}
+
 export function MineMap(props: MineMapProps) {
   const { value, onChange } = props
 
-  const revealAdjacent = (cell: MineCell, grid: MineCell[][]) => {
-    for (let i = cell.row - 1; i <= cell.row + 1; i++) {
-      for (let j = cell.col - 1; j <= cell.col + 1; j++) {
-        if (value[i]?.[j]) reveal(value[i][j], grid)
+  const handleCellChange = useCallback(
+    (newCell: MineCell) => {
+      const { row, col, revealed, adjacentMines } = newCell
+      const { revealed: oldRevealed } = value[row][col]
+      const newValue = cloneMineGrid(value)
+      newValue[row][col] = newCell
+      if (!oldRevealed && revealed && adjacentMines === 0)
+        revealAdjacent(newCell, newValue)
+      onChange(newValue)
+    },
+    [value, onChange]
+  )
+
+  const handleChord = useCallback(
+    (cell: MineCell) => {
+      const flags = reduceMineAdjacent(
+        value,
+        cell,
+        (num, curr) => (num += curr?.flagged ? 1 : 0),
+        0
+      )
+
+      if (flags === cell.adjacentMines) {
+        const newValue = cloneMineGrid(value)
+        revealAdjacent(cell, newValue)
+        onChange(newValue)
       }
-    }
-  }
-
-  const reveal = (cell: MineCell, grid: MineCell[][]) => {
-    const { revealed, flagged, adjacentMines } = cell
-    if (!revealed && !flagged) {
-      cell.revealed = true
-      if (adjacentMines === 0) revealAdjacent(cell, grid)
-    }
-  }
-
-  const handleCellChange = (cell: MineCell) => {
-    const { revealed, adjacentMines } = cell
-    const newValue = setMineCell(value, cell)
-    if (revealed && adjacentMines === 0) revealAdjacent(cell, newValue)
-    onChange(newValue)
-  }
+    },
+    [value, onChange]
+  )
 
   return (
     <table role="grid" className="mine-grid">
@@ -89,7 +153,8 @@ export function MineMap(props: MineMapProps) {
               <MineField
                 key={`cell-${i}-${j}`}
                 value={cell}
-                onChange={(newCell) => handleCellChange(newCell)}
+                onChange={handleCellChange}
+                onChord={() => handleChord(cell)}
               />
             ))}
           </tr>
