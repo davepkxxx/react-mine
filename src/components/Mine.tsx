@@ -1,12 +1,12 @@
 import classNames from 'classnames'
 import { MouseEvent, useCallback } from 'react'
-import './Mine.css'
 import {
   cloneMineGrid,
   eachMineAdjacent,
   MineCell,
   reduceMineAdjacent,
 } from '../models/mine'
+import './Mine.css'
 
 export type MineFieldProps = {
   value: MineCell
@@ -14,8 +14,7 @@ export type MineFieldProps = {
   onChord: () => void
 }
 
-export function MineField(props: MineFieldProps) {
-  const { value, onChange, onChord } = props
+export function MineField({ value, onChange, onChord }: MineFieldProps) {
   const { mined, revealed, flagged, adjacentMines } = value
 
   const handleClick = useCallback(() => {
@@ -27,8 +26,8 @@ export function MineField(props: MineFieldProps) {
   }, [value, mined, revealed, flagged, adjacentMines, onChange, onChord])
 
   const handleContextMenu = useCallback(
-    (e: MouseEvent) => {
-      e.preventDefault()
+    (event: MouseEvent) => {
+      event.preventDefault()
 
       if (revealed) {
         if (!mined && adjacentMines > 0) onChord()
@@ -78,9 +77,7 @@ function revealAdjacent(newCell: MineCell, newGrid: MineCell[][]) {
   })
 }
 
-export function MineMap(props: MineMapProps) {
-  const { value, onChange } = props
-
+export function MineMap({ value, onChange }: MineMapProps) {
   const handleCellChange = useCallback(
     (newCell: MineCell) => {
       const { row, col, revealed, adjacentMines } = newCell

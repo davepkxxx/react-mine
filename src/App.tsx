@@ -1,16 +1,8 @@
-import { useEffect, useState } from 'react'
 import './App.css'
-import { MineMap } from './components/Mine'
-import { createMineGrid, MineCell } from './models/mine'
+import { Game } from './components/Game'
 
 function App() {
-  const [grid, setGrid] = useState([] as MineCell[][])
-
-  useEffect(() => {
-    setGrid(createMineGrid(10, 10, 10))
-  }, [])
-
-  return <MineMap value={grid} onChange={(value) => setGrid(value)} />
+  return <Game />
 }
 
 export default App
