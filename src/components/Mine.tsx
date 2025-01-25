@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import { MouseEvent, useCallback, useState } from 'react'
+import { MouseEvent, useCallback } from 'react'
 import './Mine.css'
 import {
   cloneMineGrid,
@@ -17,66 +17,34 @@ export type MineFieldProps = {
 export function MineField(props: MineFieldProps) {
   const { value, onChange, onChord } = props
   const { mined, revealed, flagged, adjacentMines } = value
-  const [leftPassed, setLeftPassed] = useState(false)
-  const [rightPassed, setRightPassed] = useState(false)
 
-  const handleMouseDown = useCallback((e: MouseEvent) => {
-    switch (e.button) {
-      case 0:
-        setLeftPassed(true)
-        break
-      case 2:
-        setRightPassed(true)
-        break
+  const handleClick = useCallback(() => {
+    if (revealed) {
+      if (!mined && adjacentMines > 0) onChord()
+    } else if (!flagged) {
+      onChange({ ...value, revealed: true })
     }
-  }, [])
+  }, [value, mined, revealed, flagged, adjacentMines, onChange, onChord])
 
-  const handleMouseUp = useCallback(
+  const handleContextMenu = useCallback(
     (e: MouseEvent) => {
-      const { revealed, flagged, adjacentMines } = value
+      e.preventDefault()
 
-      const reveal = () => {
-        if (!revealed && !flagged) onChange({ ...value, revealed: true })
-      }
-
-      const toggleFlag = () => {
-        if (!revealed) onChange({ ...value, flagged: !flagged })
-      }
-      const chord = () => {
-        if (revealed && adjacentMines > 0) onChord()
-      }
-
-      switch (e.button) {
-        case 0:
-          setLeftPassed(false)
-          if (rightPassed) {
-            setRightPassed(false)
-            chord()
-          } else {
-            reveal()
-          }
-          break
-        case 2:
-          setRightPassed(false)
-          if (leftPassed) {
-            setLeftPassed(false)
-            chord()
-          } else {
-            toggleFlag()
-          }
-          break
+      if (revealed) {
+        if (!mined && adjacentMines > 0) onChord()
+      } else {
+        onChange({ ...value, flagged: !flagged })
       }
     },
-    [leftPassed, rightPassed, value, onChange, onChord]
+    [value, mined, revealed, flagged, adjacentMines, onChange, onChord]
   )
 
   return (
     <td
       role="gridcell"
       className={classNames('mine-cell', { 'mine-cell-revealed': revealed })}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onContextMenu={(e) => e.preventDefault()}
+      onClick={handleClick}
+      onContextMenu={handleContextMenu}
     >
       {revealed
         ? mined

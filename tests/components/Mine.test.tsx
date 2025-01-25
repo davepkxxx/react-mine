@@ -1,5 +1,5 @@
-import { fireEvent } from '@testing-library/react'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { Locator } from '@vitest/browser/context'
+import { beforeEach, describe, expect, Mock, test, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { MineField, MineMap } from '../../src/components/Mine'
 import { createMineGrid, MineCell } from '../../src/models/mine'
@@ -7,6 +7,8 @@ import { createMineGrid, MineCell } from '../../src/models/mine'
 describe('Mine.tsx', () => {
   describe('<MineField>', () => {
     let value: MineCell
+    let handleChange: Mock
+    let handleChord: Mock
 
     beforeEach(() => {
       value = {
@@ -17,109 +19,121 @@ describe('Mine.tsx', () => {
         flagged: false,
         adjacentMines: 0,
       }
+      handleChange = vi.fn()
+      handleChord = vi.fn()
     })
 
-    test('unrevealed', async () => {
-      const onChange = vi.fn()
-      const { getByRole } = render(
-        <MineField value={value} onChange={onChange} onChord={() => {}} />
-      )
+    async function renderMine(value: MineCell) {
+      return render(
+        <MineField
+          value={value}
+          onChange={handleChange}
+          onChord={handleChord}
+        />
+      ).getByRole('gridcell')
+    }
 
-      const loc = getByRole('gridcell')
+    async function click(loc: Locator) {
+      handleChange.mockReset()
+      handleChord.mockReset()
+      await loc.click()
+    }
+
+    async function rightClick(loc: Locator) {
+      handleChange.mockReset()
+      handleChord.mockReset()
+      await loc.click({ button: 'right' })
+    }
+
+    test('unrevealed', async () => {
+      const loc = await renderMine(value)
       await expect.element(loc).toBeInTheDocument()
       await expect.element(loc).toHaveClass('mine-cell')
       await expect.element(loc).not.toHaveClass('mine-cell-revealed')
       await expect.element(loc).toHaveTextContent('')
 
-      await loc.click()
-      expect(onChange).toHaveBeenCalledWith({ ...value, revealed: true })
+      await click(loc)
+      expect(handleChange).toHaveBeenCalledWith({ ...value, revealed: true })
+      expect(handleChord).not.toHaveBeenCalled()
 
-      await loc.click({ button: 'right' })
-      expect(onChange).toHaveBeenCalledWith({ ...value, flagged: true })
+      await rightClick(loc)
+      expect(handleChange).toHaveBeenCalledWith({ ...value, flagged: true })
+      expect(handleChord).not.toHaveBeenCalled()
     })
 
     test('empty', async () => {
-      value.revealed = true
-      const onChange = vi.fn()
-      const { getByRole } = render(
-        <MineField value={value} onChange={onChange} onChord={() => {}} />
-      )
-
-      const loc = getByRole('gridcell')
+      const loc = await renderMine({ ...value, revealed: true })
       await expect.element(loc).toBeInTheDocument()
       await expect.element(loc).toHaveClass('mine-cell')
       await expect.element(loc).toHaveClass('mine-cell-revealed')
       await expect.element(loc).toHaveTextContent('')
 
-      await loc.click()
-      expect(onChange).not.toHaveBeenCalled()
+      await click(loc)
+      expect(handleChange).not.toHaveBeenCalled()
+      expect(handleChord).not.toHaveBeenCalled()
 
-      await loc.click({ button: 'right' })
-      expect(onChange).not.toHaveBeenCalled()
+      await rightClick(loc)
+      expect(handleChange).not.toHaveBeenCalled()
+      expect(handleChord).not.toHaveBeenCalled()
     })
 
     test('mined', async () => {
-      value.mined = true
-      value.revealed = true
-      value.adjacentMines = 1
-      const onChange = vi.fn()
-      const { getByRole } = render(
-        <MineField value={value} onChange={onChange} onChord={() => {}} />
-      )
-
-      const loc = getByRole('gridcell')
+      const loc = await renderMine({
+        ...value,
+        mined: true,
+        revealed: true,
+        adjacentMines: 1,
+      })
       await expect.element(loc).toBeInTheDocument()
       await expect.element(loc).toHaveClass('mine-cell')
       await expect.element(loc).toHaveClass('mine-cell-revealed')
       await expect.element(loc).toHaveTextContent('*')
 
-      await loc.click()
-      expect(onChange).not.toHaveBeenCalled()
+      await click(loc)
+      expect(handleChange).not.toHaveBeenCalled()
+      expect(handleChord).not.toHaveBeenCalled()
 
-      await loc.click({ button: 'right' })
-      expect(onChange).not.toHaveBeenCalled()
+      await rightClick(loc)
+      expect(handleChange).not.toHaveBeenCalled()
+      expect(handleChord).not.toHaveBeenCalled()
     })
 
     test('mines adjacent', async () => {
-      value.mined = false
-      value.revealed = true
-      value.adjacentMines = Math.floor(Math.random() * 8)
-      const onChange = vi.fn()
-      const { getByRole } = render(
-        <MineField value={value} onChange={onChange} onChord={() => {}} />
-      )
-
-      const loc = getByRole('gridcell')
+      const adjacentMines = Math.floor(Math.random() * 8)
+      const loc = await renderMine({
+        ...value,
+        mined: false,
+        revealed: true,
+        adjacentMines,
+      })
       await expect.element(loc).toBeInTheDocument()
       await expect.element(loc).toHaveClass('mine-cell')
       await expect.element(loc).toHaveClass('mine-cell-revealed')
-      await expect.element(loc).toHaveTextContent(`${value.adjacentMines}`)
+      await expect.element(loc).toHaveTextContent(`${adjacentMines}`)
 
-      await loc.click()
-      expect(onChange).not.toHaveBeenCalled()
+      await click(loc)
+      expect(handleChange).not.toHaveBeenCalled()
+      expect(handleChord).toHaveBeenCalled()
 
-      await loc.click({ button: 'right' })
-      expect(onChange).not.toHaveBeenCalled()
+      await rightClick(loc)
+      expect(handleChange).not.toHaveBeenCalled()
+      expect(handleChord).toHaveBeenCalled()
     })
 
     test('flagged', async () => {
-      value.flagged = true
-      const onChange = vi.fn()
-      const { getByRole } = render(
-        <MineField value={value} onChange={onChange} onChord={() => {}} />
-      )
-
-      const loc = getByRole('gridcell')
+      const loc = await renderMine({ ...value, flagged: true })
       await expect.element(loc).toBeInTheDocument()
       await expect.element(loc).toHaveClass('mine-cell')
       await expect.element(loc).not.toHaveClass('mine-cell-revealed')
       await expect.element(loc).toHaveTextContent('P')
 
-      await loc.click()
-      expect(onChange).not.toHaveBeenCalled()
+      await click(loc)
+      expect(handleChange).not.toHaveBeenCalled()
+      expect(handleChord).not.toHaveBeenCalled()
 
-      await loc.click({ button: 'right' })
-      expect(onChange).toHaveBeenCalledWith({ ...value, flagged: false })
+      await rightClick(loc)
+      expect(handleChange).toHaveBeenCalledWith({ ...value, flagged: false })
+      expect(handleChord).not.toHaveBeenCalled()
     })
   })
 
@@ -160,7 +174,7 @@ describe('Mine.tsx', () => {
         <MineMap value={value} onChange={onChange} />
       )
 
-      await getByRole('gridcell').all()[0]?.click()
+      await getByRole('gridcell').all()[0].click()
       expect(onChange).toHaveBeenCalledWith([
         [
           {
@@ -188,7 +202,7 @@ describe('Mine.tsx', () => {
         <MineMap value={value} onChange={onChange} />
       )
 
-      await getByRole('gridcell').all()[0]?.click()
+      await getByRole('gridcell').all()[0].click()
       expect(onChange).toHaveBeenCalledWith([
         [
           {
@@ -217,7 +231,7 @@ describe('Mine.tsx', () => {
         <MineMap value={value} onChange={onChange} />
       )
 
-      await getByRole('gridcell').all()[0]?.click()
+      await getByRole('gridcell').all()[0].click()
       expect(onChange).toHaveBeenCalledWith([
         [
           {
@@ -272,7 +286,7 @@ describe('Mine.tsx', () => {
         <MineMap value={value} onChange={onChange} />
       )
 
-      await getByRole('gridcell').all()[0]?.click({ button: 'right' })
+      await getByRole('gridcell').all()[0].click({ button: 'right' })
       expect(onChange).toHaveBeenCalledWith([
         [
           {
@@ -295,7 +309,7 @@ describe('Mine.tsx', () => {
         <MineMap value={value} onChange={onChange} />
       )
 
-      await getByRole('gridcell').all()[0]?.click({ button: 'right' })
+      await getByRole('gridcell').all()[0].click({ button: 'right' })
       expect(onChange).toHaveBeenCalledWith([
         [
           {
@@ -324,12 +338,7 @@ describe('Mine.tsx', () => {
         <MineMap value={value} onChange={onChange} />
       )
 
-      const el = getByRole('gridcell').all()[0].element()
-      fireEvent.mouseDown(el, { button: 0 })
-      fireEvent.mouseDown(el, { button: 2 })
-      fireEvent.mouseUp(el, { button: 0 })
-      fireEvent.mouseUp(el, { button: 2 })
-
+      await getByRole('gridcell').all()[0].click()
       expect(onChange).not.toHaveBeenCalled()
     })
 
@@ -351,12 +360,7 @@ describe('Mine.tsx', () => {
         <MineMap value={value} onChange={onChange} />
       )
 
-      const el = getByRole('gridcell').all()[0].element()
-      fireEvent.mouseDown(el, { button: 0 })
-      fireEvent.mouseDown(el, { button: 2 })
-      fireEvent.mouseUp(el, { button: 0 })
-      fireEvent.mouseUp(el, { button: 2 })
-
+      await getByRole('gridcell').all()[0].click()
       expect(onChange).not.toHaveBeenCalled()
     })
 
@@ -378,12 +382,7 @@ describe('Mine.tsx', () => {
         <MineMap value={value} onChange={onChange} />
       )
 
-      const el = getByRole('gridcell').all()[0].element()
-      fireEvent.mouseDown(el, { button: 0 })
-      fireEvent.mouseDown(el, { button: 2 })
-      fireEvent.mouseUp(el, { button: 0 })
-      fireEvent.mouseUp(el, { button: 2 })
-
+      await getByRole('gridcell').all()[0].click()
       expect(onChange).not.toHaveBeenCalled()
     })
 
@@ -404,12 +403,7 @@ describe('Mine.tsx', () => {
         <MineMap value={value} onChange={onChange} />
       )
 
-      const el = getByRole('gridcell').all()[0].element()
-      fireEvent.mouseDown(el, { button: 0 })
-      fireEvent.mouseDown(el, { button: 2 })
-      fireEvent.mouseUp(el, { button: 0 })
-      fireEvent.mouseUp(el, { button: 2 })
-
+      await getByRole('gridcell').all()[0].click()
       expect(onChange).toHaveBeenCalledWith([
         value[0],
         [
