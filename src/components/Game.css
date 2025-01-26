@@ -1,0 +1,9 @@
+.banner {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+}
+
+.banner > * {
+  flex: none;
+}

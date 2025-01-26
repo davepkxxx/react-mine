@@ -99,17 +99,16 @@ describe('Mine.tsx', () => {
     })
 
     test('mines adjacent', async () => {
-      const adjacentMines = Math.floor(Math.random() * 8)
       const loc = await renderMine({
         ...value,
         mined: false,
         revealed: true,
-        adjacentMines,
+        adjacentMines: 5,
       })
       await expect.element(loc).toBeInTheDocument()
       await expect.element(loc).toHaveClass('mine-cell')
       await expect.element(loc).toHaveClass('mine-cell-revealed')
-      await expect.element(loc).toHaveTextContent(`${adjacentMines}`)
+      await expect.element(loc).toHaveTextContent('5')
 
       await click(loc)
       expect(handleChange).not.toHaveBeenCalled()
