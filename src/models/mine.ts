@@ -80,3 +80,27 @@ export function reduceMineAdjacent<U>(
   })
   return init
 }
+
+export interface GridState {
+  flags: number
+  unrevealed: number
+  revealedMines: number
+}
+
+export function getGridStats(grid: MineCell[][]) {
+  return grid.reduce(
+    (state, row) => {
+      return row.reduce((state, cell) => {
+        if (cell.flagged) state.flags++
+        if (cell.revealed) state.unrevealed--
+        if (cell.revealed && cell.mined) state.revealedMines++
+        return state
+      }, state)
+    },
+    {
+      flags: 0,
+      unrevealed: grid.length * (grid[0]?.length || 0),
+      revealedMines: 0,
+    } as GridState
+  )
+}

@@ -1,4 +1,11 @@
 .scoreboard {
-  width: 540px;
   font-size: 24px;
+}
+
+.scoreboard .win {
+  color: greenyellow;
+}
+
+.scoreboard .lose {
+  color: tomato;
 }

@@ -49,7 +49,8 @@ describe('Mine.tsx', () => {
       const loc = await renderMine(value)
       await expect.element(loc).toBeInTheDocument()
       await expect.element(loc).toHaveClass('mine-cell')
-      await expect.element(loc).not.toHaveClass('mine-cell-revealed')
+      await expect.element(loc).not.toHaveClass('revealed')
+      await expect.element(loc).not.toHaveClass('lose')
       await expect.element(loc).toHaveTextContent('')
 
       await click(loc)
@@ -65,7 +66,8 @@ describe('Mine.tsx', () => {
       const loc = await renderMine({ ...value, revealed: true })
       await expect.element(loc).toBeInTheDocument()
       await expect.element(loc).toHaveClass('mine-cell')
-      await expect.element(loc).toHaveClass('mine-cell-revealed')
+      await expect.element(loc).toHaveClass('revealed')
+      await expect.element(loc).not.toHaveClass('lose')
       await expect.element(loc).toHaveTextContent('')
 
       await click(loc)
@@ -86,7 +88,8 @@ describe('Mine.tsx', () => {
       })
       await expect.element(loc).toBeInTheDocument()
       await expect.element(loc).toHaveClass('mine-cell')
-      await expect.element(loc).toHaveClass('mine-cell-revealed')
+      await expect.element(loc).toHaveClass('revealed')
+      await expect.element(loc).toHaveClass('lose')
       await expect.element(loc).toHaveTextContent('*')
 
       await click(loc)
@@ -107,7 +110,8 @@ describe('Mine.tsx', () => {
       })
       await expect.element(loc).toBeInTheDocument()
       await expect.element(loc).toHaveClass('mine-cell')
-      await expect.element(loc).toHaveClass('mine-cell-revealed')
+      await expect.element(loc).toHaveClass('revealed')
+      await expect.element(loc).not.toHaveClass('lose')
       await expect.element(loc).toHaveTextContent('5')
 
       await click(loc)
@@ -123,7 +127,8 @@ describe('Mine.tsx', () => {
       const loc = await renderMine({ ...value, flagged: true })
       await expect.element(loc).toBeInTheDocument()
       await expect.element(loc).toHaveClass('mine-cell')
-      await expect.element(loc).not.toHaveClass('mine-cell-revealed')
+      await expect.element(loc).not.toHaveClass('revealed')
+      await expect.element(loc).not.toHaveClass('lose')
       await expect.element(loc).toHaveTextContent('P')
 
       await click(loc)

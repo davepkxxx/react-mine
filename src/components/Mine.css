@@ -16,6 +16,10 @@
   user-select: none;
 }
 
-.mine-cell-revealed {
+.mine-cell.revealed {
   background-color: black;
+}
+
+.mine-cell.lose {
+  background-color: maroon;
 }

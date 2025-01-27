@@ -41,7 +41,7 @@ export function MineField({ value, onChange, onChord }: MineFieldProps) {
   return (
     <td
       role="gridcell"
-      className={classNames('mine-cell', { 'mine-cell-revealed': revealed })}
+      className={classNames('mine-cell', { revealed, lose: revealed && mined })}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >

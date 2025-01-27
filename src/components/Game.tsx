@@ -1,25 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import { MineMap } from './Mine'
-import { createMineGrid, MineCell } from '../models/mine'
-import { Scoreboard } from './Scoreboard'
+import { createMineGrid, getGridStats, MineCell } from '../models/mine'
+import { GameResult, Scoreboard } from './Scoreboard'
 import { Btn } from './Btn'
 import './Game.css'
 
-function calcFlags(grid: MineCell[][]) {
-  return grid.reduce((n, row) => {
-    return row.reduce((n, cell) => {
-      return cell.flagged ? n + 1 : n
-    }, n)
-  }, 0)
-}
-
 export function Game() {
   const mines = 10
-  const [curMines, setCurMines] = useState(mines)
+  const [hiddenMines, setHiddenMines] = useState(mines)
   const [status, setStatus] = useState<'inited' | 'running' | 'stoped'>(
     'inited'
   )
   const [sec, setSec] = useState(0)
+  const [result, setResult] = useState<GameResult>('none')
   const [grid, setGrid] = useState([] as MineCell[][])
 
   useEffect(() => {
@@ -29,6 +22,7 @@ export function Game() {
       case 'inited':
         clearInterval(intervalId)
         setSec(0)
+        setResult('none')
         setGrid(createMineGrid(10, 10, mines))
         break
       case 'running': {
@@ -52,6 +46,18 @@ export function Game() {
     }
   }, [status])
 
+  useEffect(() => {
+    const { flags, unrevealed, revealedMines } = getGridStats(grid)
+    setHiddenMines(mines - flags)
+    if (revealedMines > 0) {
+      setStatus('stoped')
+      setResult('lose')
+    } else if (unrevealed === mines) {
+      setStatus('stoped')
+      setResult('win')
+    }
+  }, [grid])
+
   const handleResetClick = useCallback(() => setStatus('inited'), [])
 
   const handleChange = useCallback(
@@ -62,7 +68,6 @@ export function Game() {
         }
 
         setGrid(value)
-        setCurMines(mines - calcFlags(value))
       }
     },
     [status]
@@ -71,7 +76,7 @@ export function Game() {
   return (
     <div>
       <div className="banner">
-        <Scoreboard mines={curMines} sec={sec} />
+        <Scoreboard mines={hiddenMines} sec={sec} result={result} />
         <Btn onClick={handleResetClick}>RESET</Btn>
       </div>
       <MineMap value={grid} onChange={handleChange} />
